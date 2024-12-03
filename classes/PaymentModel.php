@@ -49,19 +49,23 @@ class PaymentModel extends db_connection
 
     public function getPaymentsByUserId(int $userId, string $userType): array
     {
+        if (!$this->db_connect()) {
+            return false;
+        }
+
         $userId = intval($userId);
-        $userType = intval($userType);
+        $userType = mysqli_real_escape_string($this->db, $userType);
 
         if ($userType === 'contractor') {
             $sql = "SELECT p.*, u.name as name
                     FROM payments p
                     JOIN users u ON p.freelancer_id = u.user_id
-                    WHERE contractor_id = $userId";
+                    WHERE p.contractor_id = $userId";
         } else {
             $sql = "SELECT p.*, u.name as name
                     FROM payments p
                     JOIN users u ON p.contractor_id = u.user_id
-                    WHERE freelancer_id = $userId";
+                    WHERE p.freelancer_id = $userId";
         }
 
         $result = $this->db_fetch_all($sql);

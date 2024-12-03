@@ -4,32 +4,6 @@ session_start();
 
 // Include common functions and menu items
 require_once 'common.php';
-
-// Sample Invoices Data (In a real application, fetch this from a database)
-$invoices = [
-    [
-        "invoice_number" => "INV-1001",
-        "freelancer_name" => "Alice Johnson",
-        "amount" => "$500",
-        "to_be_paid" => "$500",
-        "status" => "Pending"
-    ],
-    [
-        "invoice_number" => "INV-1002",
-        "freelancer_name" => "Bob Smith",
-        "amount" => "$750",
-        "to_be_paid" => "$750",
-        "status" => "Paid"
-    ],
-    [
-        "invoice_number" => "INV-1003",
-        "freelancer_name" => "Charlie Davis",
-        "amount" => "$300",
-        "to_be_paid" => "$300",
-        "status" => "Declined"
-    ],
-    // Add more invoices as needed
-];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -50,6 +24,12 @@ $invoices = [
     <title>Payments | BizMatch Hub</title>
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Paystack Inline Script -->
+    <script src="https://js.paystack.co/v1/inline.js"></script>
     <style>
         /* Payments Page Styles */
         .payments-section {
@@ -69,6 +49,22 @@ $invoices = [
         }
 
         .action-btn.decline {
+            color: #dc3545;
+        }
+
+        .action-btn {
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            margin-right: 5px;
+        }
+
+        .approve-btn {
+            color: #28a745;
+        }
+
+        .decline-btn {
             color: #dc3545;
         }
 
@@ -197,57 +193,50 @@ $invoices = [
                                 <th scope="col">Invoice Number</th>
                                 <th scope="col">Freelancer's Name</th>
                                 <th scope="col">Amount</th>
-                                <th scope="col">To Be Paid</th>
+                                <th scope="col">Paid At</th>
                                 <th scope="col">Status</th>
-                                <th scope="col">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <?php foreach ($invoices as $invoice): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($invoice['invoice_number']); ?></td>
-                                    <td><?php echo htmlspecialchars($invoice['freelancer_name']); ?></td>
-                                    <td><?php echo htmlspecialchars($invoice['amount']); ?></td>
-                                    <td><?php echo htmlspecialchars($invoice['to_be_paid']); ?></td>
-                                    <td>
-                                        <?php
-                                        $statusBadge = '';
-                                        switch ($invoice['status']) {
-                                            case 'Pending':
-                                                $statusBadge = '<span class="badge bg-warning text-dark">Pending</span>';
-                                                break;
-                                            case 'Paid':
-                                                $statusBadge = '<span class="badge bg-success">Paid</span>';
-                                                break;
-                                            case 'Declined':
-                                                $statusBadge = '<span class="badge bg-danger">Declined</span>';
-                                                break;
-                                            default:
-                                                $statusBadge = '<span class="badge bg-secondary">Unknown</span>';
-                                        }
-                                        echo $statusBadge;
-                                        ?>
-                                    </td>
-                                    <td>
-                                        <?php if ($invoice['status'] === 'Pending'): ?>
-                                            <button class="action-btn pay" data-invoice="<?php echo htmlspecialchars($invoice['invoice_number']); ?>">
-                                                <i class="bi bi-check-circle"></i>
-                                            </button>
-                                            <button class="action-btn decline" data-invoice="<?php echo htmlspecialchars($invoice['invoice_number']); ?>">
-                                                <i class="bi bi-x-circle"></i>
-                                            </button>
-                                        <?php else: ?>
-                                            --
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
+                        <tbody id="invoiceTableBody">
+                            <!-- Dynamically populated invoices will appear here -->
                         </tbody>
                     </table>
+                    <p id="noPaymentsMessage" class="text-center text-muted" style="display: none;">No payments found.</p>
                 </div>
             </div>
         </section>
     </main>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="paymentForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="paymentModalLabel">Process Payment</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Invoice Number:</strong> <span id="modalInvoiceNumber"></span></p>
+                        <p><strong>Amount:</strong> GHS <span id="modalAmount"></span></p>
+                        <p><strong>VAT (15%):</strong> GHS <span id="modalVAT"></span></p>
+                        <p><strong>Total Amount:</strong> GHS <span id="modalTotalAmount"></span></p>
+                        <div class="mb-3">
+                            <label for="customerEmail" class="form-label">Email address</label>
+                            <input type="email" class="form-control" id="customerEmail" placeholder="Enter your email" required>
+                        </div>
+                        <input type="hidden" id="hiddenTotalAmount" value="">
+                        <input type="hidden" id="hiddenInvoiceNumber" value="">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Pay Now</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 
     <footer class="footer pt-5 pb-3 px-3 px-sm-4 px-md-5 border-top border-1 border-opacity-10 text-muted">
         <div class="footer-links d-flex flex-wrap justify-content-lg-between" style="column-gap: 15px;">
@@ -328,24 +317,24 @@ $invoices = [
 
     <!-- Custom Scripts -->
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             // Toggle mobile sidebar
             const navToggler = document.getElementById('nav-toggler');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.querySelector('.mobile-nav-overlay');
 
-            navToggler.addEventListener('click', function () {
+            navToggler.addEventListener('click', function() {
                 sidebar.classList.add('active');
                 overlay.classList.add('active');
             });
 
-            overlay.addEventListener('click', function () {
+            overlay.addEventListener('click', function() {
                 sidebar.classList.remove('active');
                 overlay.classList.remove('active');
             });
 
             // Change navbar background on scroll
-            window.addEventListener('scroll', function () {
+            window.addEventListener('scroll', function() {
                 const topNav = document.getElementById('top-nav');
                 if (window.scrollY > 50) {
                     topNav.classList.add('scrolled');
@@ -354,31 +343,183 @@ $invoices = [
                 }
             });
 
-            // Handle Pay and Decline actions
-            const payButtons = document.querySelectorAll('.action-btn.pay');
-            const declineButtons = document.querySelectorAll('.action-btn.decline');
+            $(document).ready(function() {
+                // Function to capitalize the first letter
+                function capitalizeFirstLetter(string) {
+                    return string.charAt(0).toUpperCase() + string.slice(1);
+                }
 
-            payButtons.forEach(button => {
-                button.addEventListener('click', function () {
-                    const invoiceNumber = this.getAttribute('data-invoice');
-                    if (confirm(`Are you sure you want to mark invoice ${invoiceNumber} as Paid?`)) {
-                        // Implement pay action (e.g., send request to server)
-                        alert(`Invoice ${invoiceNumber} marked as Paid.`);
-                        location.reload();
+                // Fetch payment history and populate the table
+                $.ajax({
+                    url: '../actions/get_payment_history_action.php',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            const payments = response.data;
+                            const invoiceTableBody = $('#invoiceTableBody');
+
+                            if (payments.length === 0) {
+                                // No payments found
+                                $('#noPaymentsMessage').show();
+                            } else {
+                                $('#noPaymentsMessage').hide();
+                                payments.forEach(function(payment) {
+                                    let actionButtons = '';
+                                    if (payment.status.toLowerCase() === 'pending') {
+                                        actionButtons = `
+        <button class="action-btn approve-btn" data-invoice="${payment.invoice_number}" data-amount="${payment.amount}">
+            <i class="bi bi-check-circle-fill"></i>
+        </button>
+        <button class="action-btn decline-btn" data-invoice="${payment.invoice_number}">
+            <i class="bi bi-x-circle-fill"></i>
+        </button>
+    `;
+                                    } else {
+                                        actionButtons = capitalizeFirstLetter(payment.status);
+                                    }
+                                    const row = `
+                                    <tr>
+                                        <td>${payment.invoice_number}</td>
+                                        <td>${payment.name}</td>
+                                        <td>${payment.amount}</td>
+                                        <td>${payment.paid_at}</td>
+                                        <td>${actionButtons}</td>
+                                    </tr>
+                                `;
+                                    invoiceTableBody.append(row);
+                                });
+
+                                // Attach event listeners after appending rows
+                                attachEventListeners();
+                            }
+                        } else {
+                            Swal.fire('Error', response.message, 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Failed to fetch payment history:', error);
+                        Swal.fire('Error', 'An error occurred while fetching payment history.', 'error');
                     }
                 });
+
+                function attachEventListeners() {
+                    // Approve button click handler
+                    $('.approve-btn').click(function() {
+                        const invoiceNumber = $(this).data('invoice');
+                        const amount = parseFloat($(this).data('amount'));
+
+                        // Calculate VAT and total amount
+                        const vat = amount * 0.15;
+                        const totalAmount = amount + vat;
+
+                        // Populate modal fields
+                        $('#modalInvoiceNumber').text(invoiceNumber);
+                        $('#modalAmount').text(amount.toFixed(2));
+                        $('#modalVAT').text(vat.toFixed(2));
+                        $('#modalTotalAmount').text(totalAmount.toFixed(2));
+                        $('#hiddenTotalAmount').val(totalAmount.toFixed(2));
+                        $('#hiddenInvoiceNumber').val(invoiceNumber);
+
+                        // Show the modal
+                        $('#paymentModal').modal('show');
+                    });
+
+                    // Handle payment form submission
+                    $('#paymentForm').submit(function(e) {
+                        e.preventDefault();
+                        const email = $('#customerEmail').val();
+                        const amount = $('#hiddenTotalAmount').val();
+                        const invoiceNumber = $('#hiddenInvoiceNumber').val();
+
+                        // Initialize Paystack payment
+                        payWithPaystack(email, amount, invoiceNumber);
+                    });
+
+                    // Decline button click handler
+                    $('.decline-btn').click(function() {
+                        const invoiceNumber = $(this).data('invoice');
+                        Swal.fire({
+                            title: 'Confirm Decline',
+                            text: `Are you sure you want to decline invoice ${invoiceNumber}?`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, Decline',
+                            cancelButtonText: 'Cancel'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                $.ajax({
+                                    url: '../actions/update_payment_status_action.php',
+                                    type: 'POST',
+                                    data: {
+                                        invoice_number: invoiceNumber,
+                                        status: 'failed'
+                                    },
+                                    dataType: 'json',
+                                    success: function(response) {
+                                        if (response.status === 'success') {
+                                            Swal.fire('Declined', `Invoice ${invoiceNumber} has been declined.`, 'success').then(() => {
+                                                location.reload();
+                                            });
+                                        } else {
+                                            Swal.fire('Error', response.message, 'error');
+                                        }
+                                    },
+                                    error: function(xhr, status, error) {
+                                        console.error('Failed to update payment status:', error);
+                                        Swal.fire('Error', 'An error occurred while updating payment status.', 'error');
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
+
+                function payWithPaystack(email, amount, invoiceNumber) {
+                    const amountInKobo = parseFloat(amount) * 100;
+                    const og_invoiceNumber = invoiceNumber;
+
+                    var handler = PaystackPop.setup({
+                        key: 'pk_test_77ec42645ca666362284603f5c0c32866795216b',
+                        email: email,
+                        amount: amountInKobo,
+                        currency: 'GHS',
+                        ref: invoiceNumber + '_' + Math.floor((Math.random() * 1000000000) + 1),
+                        callback: function(response) {
+
+                            $.ajax({
+                                url: '../actions/process_payment_action.php',
+                                type: 'POST',
+                                data: {
+                                    invoice_number: invoiceNumber,
+                                    status: 'completed',
+                                    transaction_ref: response.reference
+                                },
+                                dataType: 'json',
+                                success: function(serverResponse) {
+                                    if (serverResponse.status === 'success') {
+                                        Swal.fire('Payment Successful', `Invoice ${invoiceNumber} marked as Paid.`, 'success').then(() => {
+                                            location.reload();
+                                        });
+                                    } else {
+                                        Swal.fire('Error', serverResponse.message, 'error');
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('Failed to update payment status:', error);
+                                    Swal.fire('Error', 'An error occurred while updating payment status.', 'error');
+                                }
+                            });
+                        },
+                        onClose: function() {
+                            Swal.fire('Payment Cancelled', 'You cancelled the payment.', 'info');
+                        }
+                    });
+                    handler.openIframe();
+                }
+
             });
 
-            declineButtons.forEach(button => {
-                button.addEventListener('click', function () {
-                    const invoiceNumber = this.getAttribute('data-invoice');
-                    if (confirm(`Are you sure you want to Decline invoice ${invoiceNumber}?`)) {
-                        // Implement decline action (e.g., send request to server)
-                        alert(`Invoice ${invoiceNumber} Declined.`);
-                        location.reload();
-                    }
-                });
-            });
         });
     </script>
     <!-- Bootstrap JS -->

@@ -12,6 +12,18 @@ $menuItems = [
         'link' => 'hire.php',
         'visible' => true,
     ],
+
+    [
+        'label'=> 'Chat',
+        'link' => 'chat.php',
+        'visible' => true,
+    ],
+
+    [
+        'label' => 'Payments',
+        'link' => 'payment.php',
+        'visible' => true,
+    ],
     // [
     //     'label' => 'Payments',
     //     'link' => 'payment.php',
@@ -31,17 +43,6 @@ $menuItems = [
     //     ],
     //     'visible' => true,
     // ],
-    [
-        'label' => 'Currency',
-        'subItems' => [
-            [
-                'label' => 'GHS',
-                'link' => '#',
-            ],
-            // Add more currencies if needed
-        ],
-        'visible' => true,
-    ],
 ];
 
 function renderMenu($menuItems, $isMobile = false)

@@ -371,74 +371,82 @@ function renderMenu($menuItems, $isMobile = false)
             });
 
             function escapeHtml(text) {
-                return text
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
+            if (typeof text !== 'string') {
+                return text;
             }
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
-            // Function to get URL parameters
-            function getUrlParameter(name) {
-                name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-                var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-                var results = regex.exec(location.search);
-                return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-            }
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
 
-            // Fetch category from URL
-            const categoryId = getUrlParameter('category');
+        // Fetch category from URL
+        const categoryId = getUrlParameter('category');
 
-            // Fetch and render freelancers based on category
-            fetchAndRenderFreelancers(categoryId);
+        // Fetch and render freelancers based on category
+        fetchAndRenderFreelancers(categoryId);
 
-            // Function to fetch freelancers from the server
-            function fetchAndRenderFreelancers(categoryId) {
-                $.ajax({
-                    url: '../actions/get_freelancers.php',
-                    type: 'GET',
-                    data: {
-                        category: categoryId
-                    },
-                    dataType: 'json',
-                    success: function(data) {
-                        renderFreelancers(data);
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Failed to fetch freelancers:', error);
-                        $('#freelancers-container').empty().append('<p class="text-danger">Failed to load freelancers. Please try again later.</p>');
-                    }
-                });
-            }
-
-            // Function to render freelancers
-            function renderFreelancers(freelancersData) {
-                const container = $('#freelancers-container');
-                container.empty(); // Clear existing freelancers
-
-                if (freelancersData.length === 0) {
-                    $('.no-freelancers').show();
-                    return;
-                } else {
-                    $('.no-freelancers').hide();
+        // Function to fetch freelancers from the server
+        function fetchAndRenderFreelancers(categoryId) {
+            $.ajax({
+                url: '../actions/get_freelancers.php',
+                type: 'GET',
+                data: { category: categoryId },
+                dataType: 'json',
+                success: function(data) {
+                    renderFreelancers(data);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Failed to fetch freelancers:', error);
+                    $('#freelancers-container').empty().append('<p class="text-danger">Failed to load freelancers. Please try again later.</p>');
                 }
+            });
+        }
 
-                freelancersData.forEach(freelancer => {
-                    // Map 'num_ratings' to 'numberOfClients'
-                    const numberOfClients = escapeHtml(freelancer.num_ratings);
+        // Function to render freelancers
+        function renderFreelancers(freelancersData) {
+            const container = $('#freelancers-container');
+            container.empty(); // Clear existing freelancers
 
-                    // Use profile_picture if available, else use a placeholder
-                    const profileImage = freelancer.profile_picture ? escapeHtml(freelancer.profile_picture) : 'https://via.placeholder.com/400x200.png?text=No+Image';
+            if (freelancersData.length === 0) {
+                $('.no-freelancers').show();
+                return;
+            } else {
+                $('.no-freelancers').hide();
+            }
 
-                    const freelancerCard = `
+            freelancersData.forEach(freelancer => {
+                // Map 'num_ratings' to 'numberOfClients'
+                const numberOfClients = escapeHtml(freelancer.num_ratings);
+
+                // Use profile_picture if available, else use a placeholder
+                const profileImage = freelancer.profile_picture ? escapeHtml(freelancer.profile_picture) : 'https://via.placeholder.com/400x200.png?text=No+Image';
+
+                // Extract category names
+                const categoryNames = freelancer.categories && freelancer.categories.length > 0
+                    ? freelancer.categories.map(cat => escapeHtml(cat.category_name)).join(', ')
+                    : 'Uncategorized';
+
+                const freelancerCard = `
                     <div class="col-md-4 col-sm-6 mb-4">
                         <div class="card freelancer-card h-100">
                             <img src="${profileImage}" class="card-img-top" alt="${escapeHtml(freelancer.name)}">
                             <div class="card-body d-flex flex-column">
                                 <h5 class="card-title">${escapeHtml(freelancer.name)}</h5>
+                                <p class="card-text mb-1"><strong>Job Title:</strong> ${escapeHtml(freelancer.job_title)}</p>
                                 <p class="card-text mb-1"><strong>Rating:</strong> ${escapeHtml(freelancer.total_rating)} ⭐</p>
-                                <p class="card-text mb-3"><strong>Clients Served:</strong> ${numberOfClients}</p>
+                                <p class="card-text mb-2"><strong>Clients Served:</strong> ${numberOfClients}</p>
+                                <p class="card-text mb-3"><strong>Categories:</strong> ${categoryNames}</p>
                                 <div class="mt-auto">
                                     <a href="profile.php?freelancer_id=${escapeHtml(freelancer.freelancer_id)}" class="btn btn-primary me-2">View Profile</a>
                                     <a href="chat.php?freelancer_id=${escapeHtml(freelancer.freelancer_id)}" class="btn btn-secondary">Chat</a>
@@ -447,9 +455,9 @@ function renderMenu($menuItems, $isMobile = false)
                         </div>
                     </div>
                 `;
-                    container.append(freelancerCard);
-                });
-            }
+                container.append(freelancerCard);
+            });
+        }
         });
     </script>
     <!-- Bootstrap JS -->

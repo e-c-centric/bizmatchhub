@@ -1,8 +1,6 @@
 <?php
-// filepath: /c:/xampp/htdocs/bizmatchhub/views/profile.php
 session_start();
 
-// Redirect admin users if necessary
 if (isset($_SESSION['user_id'])) {
     $user_id = $_SESSION['user_id'];
     $user_type = $_SESSION['user_type'];
@@ -12,77 +10,15 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 
-// Include common functions and menu items
 require_once 'common.php';
 
-// Sample Freelancers Data (In a real application, fetch this from a database)
-$freelancersData = [
-    "101" => [
-        "name" => "Alice Johnson",
-        "job_title" => "Senior Web Developer",
-        "work_experience" => "5 years in full-stack web development specializing in PHP and JavaScript.",
-        "introduction" => "Passionate about building responsive and user-friendly websites.",
-        "total_rating" => 4.5,
-        "num_ratings" => 120,
-        "num_clients" => 80,
-        "hourly_rate" => "$50",
-        "work_hours" => "Flexible",
-        "profileLink" => "profile.php?freelancer_id=101",
-        "image" => "https://via.placeholder.com/400x200.png?text=Alice+Johnson"
-    ],
-    "102" => [
-        "name" => "Bob Smith",
-        "job_title" => "UI/UX Designer",
-        "work_experience" => "7 years in designing intuitive user interfaces and experiences.",
-        "introduction" => "Dedicated to creating visually appealing and functional designs.",
-        "total_rating" => 4.8,
-        "num_ratings" => 200,
-        "num_clients" => 150,
-        "hourly_rate" => "$75",
-        "work_hours" => "Full-time",
-        "profileLink" => "profile.php?freelancer_id=102",
-        "image" => "https://via.placeholder.com/400x200.png?text=Bob+Smith"
-    ],
-    "201" => [
-        "name" => "Charlie Davis",
-        "job_title" => "Content Writer",
-        "work_experience" => "4 years of experience in creating engaging content for various industries.",
-        "introduction" => "Skilled in crafting compelling stories and SEO-friendly articles.",
-        "total_rating" => 4.6,
-        "num_ratings" => 85,
-        "num_clients" => 60,
-        "hourly_rate" => "$60",
-        "work_hours" => "Part-time",
-        "profileLink" => "profile.php?freelancer_id=201",
-        "image" => "https://via.placeholder.com/400x200.png?text=Charlie+Davis"
-    ],
-    "202" => [
-        "name" => "Dana Lee",
-        "job_title" => "Digital Marketer",
-        "work_experience" => "6 years in developing and implementing digital marketing strategies.",
-        "introduction" => "Expert in SEO, PPC, and social media marketing to drive business growth.",
-        "total_rating" => 4.7,
-        "num_ratings" => 95,
-        "num_clients" => 70,
-        "hourly_rate" => "$55",
-        "work_hours" => "Flexible",
-        "profileLink" => "profile.php?freelancer_id=202",
-        "image" => "https://via.placeholder.com/400x200.png?text=Dana+Lee"
-    ]
-    // Add more freelancers as needed
-];
-
-// Retrieve freelancer_id from URL parameter
 $freelancer_id = isset($_GET['freelancer_id']) ? $_GET['freelancer_id'] : null;
 
-// Fetch freelancer data
-$freelancer = isset($freelancersData[$freelancer_id]) ? $freelancersData[$freelancer_id] : null;
-
-// If freelancer not found, redirect or show error
-if (!$freelancer) {
-    echo "<script>alert('Freelancer not found.'); window.location.href='people.php';</script>";
+if (!$freelancer_id) {
+    header('Location: hire.php');
     exit();
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -100,9 +36,10 @@ if (!$freelancer) {
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
-    <title><?php echo htmlspecialchars($freelancer['name']); ?> - Profile | BizMatch Hub</title>
     <!-- Bootstrap Icons -->
+    <title>Freelancer Profile</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         /* Freelancer Profile Styles */
         .profile-header {
@@ -233,7 +170,6 @@ if (!$freelancer) {
                 <hr>
                 <ul class="fw-normal d-flex flex-column mx-auto">
                     <?php
-                    // Replicate authentication menu items if needed
                     if (!isset($_SESSION['user_id'])): ?>
                         <li class="col-auto my-2 fs-6"><a href="../login/signin.php">Sign in</a></li>
                     <?php else: ?>
@@ -250,41 +186,8 @@ if (!$freelancer) {
         <!-- Freelancer Profile Section -->
         <section class="freelancer-profile py-5 px-3 px-sm-4 px-md-5">
             <div class="container">
-                <div class="row profile-header">
-                    <div class="col-md-4 mb-4 mb-md-0">
-                        <img src="<?php echo htmlspecialchars($freelancer['image']); ?>" alt="<?php echo htmlspecialchars($freelancer['name']); ?>" class="profile-image">
-                    </div>
-                    <div class="col-md-8">
-                        <h3><?php echo htmlspecialchars($freelancer['name']); ?></h3>
-                        <p class="text-muted"><?php echo htmlspecialchars($freelancer['job_title']); ?></p>
-                        <div class="d-flex flex-wrap align-items-center mb-3">
-                            <span class="me-4"><i class="bi bi-star-fill text-warning"></i> <?php echo htmlspecialchars($freelancer['total_rating']); ?> (<?php echo htmlspecialchars($freelancer['num_ratings']); ?> ratings)</span>
-                            <span><i class="bi bi-people-fill text-info"></i> <?php echo htmlspecialchars($freelancer['num_clients']); ?> Clients Served</span>
-                        </div>
-                        <div class="profile-actions">
-                            <a href="#" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#chatModal">Chat</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="profile-details mt-4">
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <p><strong>Introduction:</strong></p>
-                            <p><?php echo htmlspecialchars($freelancer['introduction']); ?></p>
-                        </div>
-                        <div class="col-lg-6">
-                            <p><strong>Work Experience:</strong></p>
-                            <p><?php echo htmlspecialchars($freelancer['work_experience']); ?></p>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <p><strong>Hourly Rate:</strong> <?php echo htmlspecialchars($freelancer['hourly_rate']); ?></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Available Work Hours:</strong> <?php echo htmlspecialchars($freelancer['work_hours']); ?></p>
-                        </div>
-                    </div>
+                <div id="profile-content">
+                    <!-- Profile content will be injected here -->
                 </div>
             </div>
         </section>
@@ -356,39 +259,16 @@ if (!$freelancer) {
                     <li><a href="#"><i class="bi bi-facebook"></i></a></li>
                     <li><a href="#"><i class="bi bi-twitter"></i></a></li>
                     <li><a href="#"><i class="bi bi-linkedin"></i></a></li>
-                    <!-- Add more social icons as needed -->
                 </ul>
                 <ul class="d-flex align-items-center my-auto">
                     <li><a href="#"><i class="bi bi-instagram"></i></a></li>
                     <li><a href="#"><i class="bi bi-youtube"></i></a></li>
-                    <!-- Add more social icons as needed -->
                 </ul>
             </div>
         </div>
     </footer>
 
-    <!-- Chat Modal -->
-    <div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="chatModalLabel">Chat with <?php echo htmlspecialchars($freelancer['name']); ?></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="chatBox" style="height: 400px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px;">
-                        <!-- Chat messages will appear here -->
-                    </div>
-                    <form id="chatForm" class="mt-3">
-                        <div class="input-group">
-                            <input type="text" id="chatMessage" class="form-control" placeholder="Type your message..." required>
-                            <button class="btn btn-primary" type="submit">Send</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Custom Scripts -->
     <script>
@@ -412,6 +292,125 @@ if (!$freelancer) {
                     $('#top-nav').removeClass('scrolled');
                 }
             });
+
+            function escapeHtml(text) {
+                if (typeof text !== 'string') {
+                    return text;
+                }
+                return text
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            // Fetch freelancer_id from PHP variable
+            const freelancerId = '<?php echo htmlspecialchars($freelancer_id); ?>';
+
+            // Fetch and render freelancer data
+            fetchFreelancerData(freelancerId);
+
+            function fetchFreelancerData(freelancerId) {
+                $.ajax({
+                    url: '../actions/get_freelancer_by_id_action.php',
+                    type: 'GET',
+                    data: {
+                        freelancer_id: freelancerId
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        renderFreelancerProfile(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Failed to fetch freelancer data:', error);
+                        // Redirect to browse categories page on error
+                        window.location.href = 'people.php';
+                    }
+                });
+            }
+
+            function renderFreelancerProfile(freelancer) {
+                if (!freelancer || !freelancer.freelancer_id) {
+                    // Redirect if freelancer data is invalid
+                    window.location.href = 'people.php';
+                    return;
+                }
+
+                // Use profile_picture if available, else use a placeholder
+                const profileImage = freelancer.profile_picture ? escapeHtml(freelancer.profile_picture) : 'https://via.placeholder.com/400x200.png?text=No+Image';
+
+                // Extract categories and experience levels
+                const categories = freelancer.categories && freelancer.categories.length > 0 ?
+                    freelancer.categories.map(cat => `<span class="badge bg-secondary me-1">${escapeHtml(cat.category_name)} (${escapeHtml(cat.experience_level)})</span>`).join(' ') :
+                    '<span class="badge bg-secondary">Uncategorized</span>';
+
+                // Extract portfolios
+                const portfolios = freelancer.portfolios && freelancer.portfolios.length > 0 ?
+                    freelancer.portfolios.map(portfolio => `
+                        <div class="portfolio-item mb-3">
+                            <h5>${escapeHtml(portfolio.title)}</h5>
+                            <p>${escapeHtml(portfolio.description)}</p>
+                            <a href="${escapeHtml(portfolio.url)}" target="_blank">View Portfolio</a>
+                        </div>
+                    `).join('') :
+                    '<p>No portfolios available.</p>';
+
+                // Generate profile HTML
+                const profileHtml = `
+                    <div class="row profile-header">
+                        <div class="col-md-4 mb-4 mb-md-0">
+                            <img src="${profileImage}" alt="${escapeHtml(freelancer.user_name)}" class="profile-image">
+                        </div>
+                        <div class="col-md-8">
+                            <h3>${escapeHtml(freelancer.user_name)}</h3>
+                            <p class="text-muted">${escapeHtml(freelancer.job_title)}</p>
+                            <div class="d-flex flex-wrap align-items-center mb-3">
+                                <span class="me-4"><i class="bi bi-star-fill text-warning"></i> ${escapeHtml(freelancer.total_rating)} (${escapeHtml(freelancer.num_ratings)} ratings)</span>
+                                <span><i class="bi bi-people-fill text-info"></i> ${escapeHtml(freelancer.num_ratings)} Clients Served</span>
+                            </div>
+                            <div class="profile-actions">
+                                <a href="chat.php?freelancer_id=${escapeHtml(freelancer.freelancer_id)}" class="btn btn-secondary">Chat</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="profile-details mt-4">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <p><strong>Introduction:</strong></p>
+                                <p>${escapeHtml(freelancer.introduction)}</p>
+                            </div>
+                            <div class="col-lg-6">
+                                <p><strong>Work Experience:</strong></p>
+                                <p>${escapeHtml(freelancer.work_experience)} years</p>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <p><strong>Hourly Rate:</strong> $${escapeHtml(freelancer.hourly_rate)}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Available Work Hours:</strong> ${escapeHtml(freelancer.work_hours)}</p>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <p><strong>Categories and Experience Levels:</strong></p>
+                                ${categories}
+                            </div>
+                        </div>
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h4>Portfolios</h4>
+                                ${portfolios}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Inject profile HTML into the page
+                $('#profile-content').html(profileHtml);
+            }
         });
     </script>
     <!-- Bootstrap JS -->

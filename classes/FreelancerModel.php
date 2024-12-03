@@ -161,42 +161,111 @@ class FreelancerModel extends db_connection
         $result = $this->db_fetch_all($sql);
         return $result ? $result : [];
     }
-
     public function getFreelancers($category_id = null): array
     {
         if (!$this->db_connect()) {
-            return false;
+            // Return an empty array instead of false to maintain return type consistency
+            return [];
         }
 
-        $sql = "SELECT frd.*, 
-        frc.category_id, 
-        frc.experience_level, 
-        u.email, 
-        u.phone_number, 
-        u.name, 
-        u.profile_picture,
-        p.portfolio_id, 
-        p.title, 
-        p.description, 
-        p.url,
-        c.name AS category_name
-        FROM freelancerdetails frd 
-        LEFT JOIN freelancercategories frc 
-        ON frd.freelancer_id = frc.freelancer_id
-        JOIN users u 
-        on u.user_id = frd.freelancer_id
-        LEFT JOIN portfolios p 
-        ON frd.freelancer_id = p.freelancer_id
-        JOIN categories c
-        ON c.category_id = frc.category_id";
+        // SQL query to fetch freelancer details along with their categories and portfolios
+        $sql = "SELECT 
+                    frd.freelancer_id, 
+                    frd.work_experience, 
+                    frd.job_title, 
+                    frd.introduction, 
+                    frd.total_rating, 
+                    frd.num_ratings, 
+                    frd.hourly_rate, 
+                    frd.work_hours, 
+                    frc.category_id, 
+                    frc.experience_level, 
+                    u.email, 
+                    u.phone_number, 
+                    u.name, 
+                    u.profile_picture,
+                    p.portfolio_id, 
+                    p.title, 
+                    p.description, 
+                    p.url,
+                    c.name AS category_name
+                FROM freelancerdetails frd 
+                LEFT JOIN freelancercategories frc ON frd.freelancer_id = frc.freelancer_id
+                JOIN users u ON u.user_id = frd.freelancer_id
+                LEFT JOIN portfolios p ON frd.freelancer_id = p.freelancer_id
+                JOIN categories c ON c.category_id = frc.category_id";
 
+        // Append WHERE clause if a specific category ID is provided
         if ($category_id) {
-            $category_id = intval($category_id);
+            $category_id = intval($category_id); // Sanitize input
             $sql .= " WHERE frc.category_id = $category_id";
         }
 
+        // Execute the query and fetch all results
         $result = $this->db_fetch_all($sql);
-        return $result ? $result : [];
+
+        // If the result is empty or false, return an empty array
+        if (!$result || !is_array($result)) {
+            return [];
+        }
+
+        // Initialize an empty array to hold aggregated freelancers
+        $freelancers = [];
+
+        // Iterate through each row in the result set
+        foreach ($result as $row) {
+            $freelancer_id = $row['freelancer_id'];
+
+            // If this freelancer hasn't been added yet, initialize their data structure
+            if (!isset($freelancers[$freelancer_id])) {
+                $freelancers[$freelancer_id] = [
+                    'freelancer_id'     => $freelancer_id,
+                    'work_experience'   => $row['work_experience'],
+                    'job_title'         => $row['job_title'],
+                    'introduction'      => $row['introduction'],
+                    'total_rating'      => $row['total_rating'],
+                    'num_ratings'       => $row['num_ratings'], // Number of clients
+                    'hourly_rate'       => $row['hourly_rate'],
+                    'work_hours'        => $row['work_hours'],
+                    'experience_level'  => $row['experience_level'],
+                    'email'             => $row['email'],
+                    'phone_number'      => $row['phone_number'],
+                    'name'              => $row['name'],
+                    'profile_picture'   => $row['profile_picture'],
+                    'categories'        => [], // To store multiple categories
+                    'portfolios'        => []  // To store multiple portfolios
+                ];
+            }
+
+            // Add category to the freelancer's categories array if not already present
+            if ($row['category_id'] && !in_array([
+                'category_id'   => $row['category_id'],
+                'category_name' => $row['category_name']
+            ], $freelancers[$freelancer_id]['categories'])) {
+                $freelancers[$freelancer_id]['categories'][] = [
+                    'category_id'   => $row['category_id'],
+                    'category_name' => $row['category_name']
+                ];
+            }
+
+            // Add portfolio to the freelancer's portfolios array if not already present
+            if ($row['portfolio_id'] && !in_array([
+                'portfolio_id' => $row['portfolio_id'],
+                'title'        => $row['title'],
+                'description'  => $row['description'],
+                'url'          => $row['url']
+            ], $freelancers[$freelancer_id]['portfolios'])) {
+                $freelancers[$freelancer_id]['portfolios'][] = [
+                    'portfolio_id' => $row['portfolio_id'],
+                    'title'        => $row['title'],
+                    'description'  => $row['description'],
+                    'url'          => $row['url']
+                ];
+            }
+        }
+
+        // Reindex the freelancers array to have sequential numeric keys
+        return array_values($freelancers);
     }
 
     public function getFreelancerById($freelancer_id): array
