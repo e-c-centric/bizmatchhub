@@ -29,10 +29,13 @@ class ChatModel extends db_connection
         $senderId = intval($senderId);
         $receiverId = intval($receiverId);
 
-        $sql = "SELECT * FROM Chats 
-                WHERE (sender_id = $senderId AND receiver_id = $receiverId) 
-                   OR (sender_id = $receiverId AND receiver_id = $senderId) 
-                ORDER BY sent_at ASC";
+        $sql = "SELECT c.sender_id, c.receiver_id, c.message, c.been_read, c.created_at, u.username as sender_username
+                FROM Chats c
+                JOIN Users u ON c.sender_id = u.user_id
+                WHERE (c.sender_id = $senderId AND c.receiver_id = $receiverId)
+                OR (c.sender_id = $receiverId AND c.receiver_id = $senderId)
+                ORDER BY c.created_at ASC";
+
 
         $result = $this->db_fetch_all($sql);
         return $result ? $result : [];

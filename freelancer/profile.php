@@ -363,6 +363,7 @@ require_once 'common.php';
                 </div>
             </div>
         </div>
+
         <!-- Update Profile Modal -->
         <div class="modal fade" id="updateProfileModal" tabindex="-1" aria-labelledby="updateProfileModalLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -375,14 +376,26 @@ require_once 'common.php';
                         <!-- Update Profile Form -->
                         <form id="updateProfileForm">
                             <div class="mb-3">
-                                <label for="name" class="form-label">Name</label>
-                                <input type="text" class="form-control" id="name" name="name" value="${freelancer.name}" required>
+                                <label for="workExperience" class="form-label">Work Experience (Years)</label>
+                                <input type="number" class="form-control" id="workExperience" name="workExperience" min="0" required>
                             </div>
                             <div class="mb-3">
-                                <label for="job_title" class="form-label">Job Title</label>
-                                <input type="text" class="form-control" id="job_title" name="job_title" value="${freelancer.job_title}" required>
+                                <label for="jobTitle" class="form-label">Job Title</label>
+                                <input type="text" class="form-control" id="jobTitle" name="jobTitle" required>
                             </div>
-                            <!-- Add more fields as necessary -->
+                            <div class="mb-3">
+                                <label for="introduction" class="form-label">Introduction</label>
+                                <textarea class="form-control" id="introduction" name="introduction" rows="3" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="hourlyRate" class="form-label">Hourly Rate ($)</label>
+                                <input type="number" class="form-control" id="hourlyRate" name="hourlyRate" step="0.01" min="0" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="workHours" class="form-label">Work Hours</label>
+                                <input type="text" class="form-control" id="workHours" name="workHours" placeholder="e.g., 9 AM - 5 PM" required>
+                            </div>
+                            <div id="formFeedback" class="mb-3"></div>
                             <button type="submit" class="btn btn-primary">Save Changes</button>
                         </form>
                     </div>
@@ -453,6 +466,8 @@ require_once 'common.php';
                 success: function(data) {
                     if (data.freelancer_id) {
                         const freelancer = data;
+                        currentFreelancer = data;
+
 
                         // Extract categories and portfolios from the freelancer object
                         const categories = freelancer.categories.map(cat => ({
@@ -595,33 +610,19 @@ require_once 'common.php';
                 const notificationIcon = $('#notificationIcon');
 
                 if (hasNotifications) {
-                    // Change to filled red bell icon
-                    notificationIcon.removeClass('bi-bell').addClass('bi-bell-fill text-danger');
+                    notificationIcon.removeClass('bi-bell bi-bell-fill text-white').addClass('bi-bell-fill text-danger');
                 } else {
-                    // Revert to outlined transparent bell icon
-                    notificationIcon.removeClass('bi-bell-fill text-danger').addClass('bi-bell');
+                    notificationIcon.removeClass('bi-bell bi-bell-fill text-danger').addClass('bi-bell-fill text-white');
                 }
             }
 
             function fetchNotificationStatus() {
                 $.ajax({
-                    url: '../actions/get_notifications.php', // Ensure this path is correct
+                    url: '../actions/get_notifications.php',
                     type: 'GET',
-                    dataType: 'json', // Adjust this based on your endpoint's response
+                    dataType: 'json',
                     success: function(data) {
-                        /**
-                         * Since the endpoint returns a single digit (0 or 1),
-                         * we need to interpret 'data' directly.
-                         * - 0 => No notifications
-                         * - 1 => Notifications exist
-                         */
-
-                        // If dataType is 'json' and the response is a JSON number
                         const hasNotifications = data > 0;
-
-                        // If dataType is 'text' and the response is a string '0' or '1'
-                        // const hasNotifications = parseInt(data, 10) > 0;
-
                         updateNotificationIcon(hasNotifications);
                     },
                     error: function(xhr, status, error) {
@@ -803,6 +804,66 @@ require_once 'common.php';
             fetchNotificationStatus();
             setInterval(fetchNotificationStatus, 60000);
 
+            $('#updateProfileModal').on('show.bs.modal', function() {
+                if ($.isEmptyObject(currentFreelancer)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Freelancer data is not available. Please refresh the page and try again.',
+                        confirmButtonText: 'OK'
+                    });
+                    return;
+                }
+
+                // Populate the form fields with existing data
+                $('#workExperience').val(currentFreelancer.work_experience);
+                $('#jobTitle').val(currentFreelancer.job_title);
+                $('#introduction').val(currentFreelancer.introduction);
+                $('#hourlyRate').val(currentFreelancer.hourly_rate);
+                $('#workHours').val(currentFreelancer.work_hours);
+            });
+
+            /**
+             * Handle Update Profile Form Submission via AJAX
+             */
+            $('#updateProfileForm').on('submit', function(e) {
+                e.preventDefault(); // Prevent the default form submission
+
+                // Collect form data
+                const formData = {
+                    workExperience: $('#workExperience').val(),
+                    jobTitle: $('#jobTitle').val(),
+                    introduction: $('#introduction').val(),
+                    hourlyRate: $('#hourlyRate').val(),
+                    workHours: $('#workHours').val()
+                };
+
+                // Send AJAX request to the endpoint
+                $.ajax({
+                    url: '../actions/update_freelancer_profile_action.php',
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    success: function(response) {
+                        const feedbackDiv = $('#formFeedback');
+                        if (response.success) {
+                            feedbackDiv.html('<div class="alert alert-success" role="alert">' + response.message + '</div>');
+                            // Optionally, close the modal after a short delay
+                            setTimeout(function() {
+                                $('#updateProfileModal').modal('hide');
+                                feedbackDiv.html(''); // Clear feedback
+                                location.reload(); // Refresh the page to reflect changes
+                            }, 2000);
+                        } else {
+                            feedbackDiv.html('<div class="alert alert-danger" role="alert">' + response.message + '</div>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error updating profile:', error);
+                        $('#formFeedback').html('<div class="alert alert-danger" role="alert">An unexpected error occurred. Please try again later.</div>');
+                    }
+                });
+            });
         });
     </script>
 </body>
