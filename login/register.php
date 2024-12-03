@@ -12,7 +12,7 @@
     <link href="../assets/style.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            background: url('R.jpg') no-repeat center center fixed;
             height: 100vh;
             display: flex;
             align-items: center;

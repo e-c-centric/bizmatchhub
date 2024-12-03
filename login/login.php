@@ -25,11 +25,12 @@ if (isset($_SESSION['user_id'])) {
         /* Custom Styles for Login Page */
 
         body {
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            background: url('R.jpg') no-repeat center center fixed;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+
         }
 
         .login-container {
