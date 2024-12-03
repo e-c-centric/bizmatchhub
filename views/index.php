@@ -1,5 +1,7 @@
 <?php
 
+session_start();
+
 $menuItems = [
   [
     'label' => 'BizMatch Hub Business',
@@ -75,6 +77,14 @@ function renderMenu($menuItems, $isMobile = false)
       echo '</a>';
       echo '</li>';
     }
+  }
+}
+
+if (isset($_SESSION['user_id'])) {
+  $user_id = $_SESSION['user_id'];
+  $user_type = $_SESSION['user_type'];
+  if ($user_type == 1) {
+    header('Location: ../freelancer/dashboard.php');
   }
 }
 ?>
