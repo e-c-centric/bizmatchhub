@@ -162,7 +162,7 @@ class FreelancerModel extends db_connection
         return $result ? $result : [];
     }
 
-    public function getFreelancers(): array
+    public function getFreelancers($category_id = null): array
     {
         if (!$this->db_connect()) {
             return false;
@@ -174,7 +174,7 @@ class FreelancerModel extends db_connection
         u.email, 
         u.phone_number, 
         u.name, 
-        u.profile_picture, 
+        u.profile_picture,
         p.portfolio_id, 
         p.title, 
         p.description, 
@@ -189,6 +189,11 @@ class FreelancerModel extends db_connection
         ON frd.freelancer_id = p.freelancer_id
         JOIN categories c
         ON c.category_id = frc.category_id";
+
+        if ($category_id) {
+            $category_id = intval($category_id);
+            $sql .= " WHERE frc.category_id = $category_id";
+        }
 
         $result = $this->db_fetch_all($sql);
         return $result ? $result : [];

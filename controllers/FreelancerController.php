@@ -20,10 +20,11 @@ class FreelancerController
         return $this->freelancerModel->getFreelancerById($freelancerId);
     }
 
-    public function getFreelancers(): array
+    public function getFreelancers($categoryId = null): array
     {
-        return $this->freelancerModel->getFreelancers();
+        return $this->freelancerModel->getFreelancers($categoryId);
     }
+
 
     public function updateFreelancer(int $freelancerId, int $workExperience, string $jobTitle, string $introduction, float $hourlyRate, string $workHours): bool
     {

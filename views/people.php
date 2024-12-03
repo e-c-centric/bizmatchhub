@@ -370,48 +370,50 @@ function renderMenu($menuItems, $isMobile = false)
                 }
             });
 
-            // Freelancers Data (Static List with Ratings and Clients)
-            const freelancersData = [{
-                    "freelancer_id": "101",
-                    "name": "Alice Johnson",
-                    "profileLink": "profile.php?freelancer_id=101",
-                    "image": "https://via.placeholder.com/400x200.png?text=Alice+Johnson",
-                    "rating": 4.5,
-                    "numberOfRatings": 120,
-                    "numberOfClients": 80
-                },
-                {
-                    "freelancer_id": "102",
-                    "name": "Bob Smith",
-                    "profileLink": "profile.php?freelancer_id=102",
-                    "image": "https://via.placeholder.com/400x200.png?text=Bob+Smith",
-                    "rating": 4.8,
-                    "numberOfRatings": 200,
-                    "numberOfClients": 150
-                },
-                {
-                    "freelancer_id": "201",
-                    "name": "Charlie Davis",
-                    "profileLink": "profile.php?freelancer_id=201",
-                    "image": "https://via.placeholder.com/400x200.png?text=Charlie+Davis",
-                    "rating": 4.6,
-                    "numberOfRatings": 85,
-                    "numberOfClients": 60
-                },
-                {
-                    "freelancer_id": "202",
-                    "name": "Dana Lee",
-                    "profileLink": "profile.php?freelancer_id=202",
-                    "image": "https://via.placeholder.com/400x200.png?text=Dana+Lee",
-                    "rating": 4.7,
-                    "numberOfRatings": 95,
-                    "numberOfClients": 70
-                }
-                // Add more freelancers as needed
-            ];
+            function escapeHtml(text) {
+                return text
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            // Function to get URL parameters
+            function getUrlParameter(name) {
+                name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+                var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+                var results = regex.exec(location.search);
+                return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+            }
+
+            // Fetch category from URL
+            const categoryId = getUrlParameter('category');
+
+            // Fetch and render freelancers based on category
+            fetchAndRenderFreelancers(categoryId);
+
+            // Function to fetch freelancers from the server
+            function fetchAndRenderFreelancers(categoryId) {
+                $.ajax({
+                    url: '../actions/get_freelancers.php',
+                    type: 'GET',
+                    data: {
+                        category: categoryId
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        renderFreelancers(data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Failed to fetch freelancers:', error);
+                        $('#freelancers-container').empty().append('<p class="text-danger">Failed to load freelancers. Please try again later.</p>');
+                    }
+                });
+            }
 
             // Function to render freelancers
-            function renderFreelancers() {
+            function renderFreelancers(freelancersData) {
                 const container = $('#freelancers-container');
                 container.empty(); // Clear existing freelancers
 
@@ -423,28 +425,31 @@ function renderMenu($menuItems, $isMobile = false)
                 }
 
                 freelancersData.forEach(freelancer => {
+                    // Map 'num_ratings' to 'numberOfClients'
+                    const numberOfClients = escapeHtml(freelancer.num_ratings);
+
+                    // Use profile_picture if available, else use a placeholder
+                    const profileImage = freelancer.profile_picture ? escapeHtml(freelancer.profile_picture) : 'https://via.placeholder.com/400x200.png?text=No+Image';
+
                     const freelancerCard = `
-                        <div class="col-md-4 col-sm-6 mb-4">
-                            <div class="card freelancer-card h-100">
-                                <img src="${freelancer.image}" class="card-img-top" alt="${freelancer.name}">
-                                <div class="card-body d-flex flex-column">
-                                    <h5 class="card-title">${freelancer.name}</h5>
-                                    <p class="card-text mb-1"><strong>Rating:</strong> ${freelancer.rating} ⭐</p>
-                                    <p class="card-text mb-3"><strong>Ratings:</strong> ${freelancer.numberOfRatings} | <strong>Clients Served:</strong> ${freelancer.numberOfClients}</p>
-                                    <div class="mt-auto">
-                                        <a href="${freelancer.profileLink}" class="btn btn-primary me-2">View Profile</a>
-                                        <a href="chat.php?freelancer_id=${freelancer.freelancer_id}" class="btn btn-secondary">Chat</a>
-                                    </div>
+                    <div class="col-md-4 col-sm-6 mb-4">
+                        <div class="card freelancer-card h-100">
+                            <img src="${profileImage}" class="card-img-top" alt="${escapeHtml(freelancer.name)}">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">${escapeHtml(freelancer.name)}</h5>
+                                <p class="card-text mb-1"><strong>Rating:</strong> ${escapeHtml(freelancer.total_rating)} ⭐</p>
+                                <p class="card-text mb-3"><strong>Clients Served:</strong> ${numberOfClients}</p>
+                                <div class="mt-auto">
+                                    <a href="profile.php?freelancer_id=${escapeHtml(freelancer.freelancer_id)}" class="btn btn-primary me-2">View Profile</a>
+                                    <a href="chat.php?freelancer_id=${escapeHtml(freelancer.freelancer_id)}" class="btn btn-secondary">Chat</a>
                                 </div>
                             </div>
                         </div>
-                    `;
+                    </div>
+                `;
                     container.append(freelancerCard);
                 });
             }
-
-            // Initialize freelancers
-            renderFreelancers();
         });
     </script>
     <!-- Bootstrap JS -->

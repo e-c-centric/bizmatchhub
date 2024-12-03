@@ -13,6 +13,10 @@ require_once '../controllers/UserController.php';
 
 $userController = new UserController();
 
-$users = $userController->viewAllUsers();
+if (isset($_GET['user_type'])) {
+    $users = $userController->viewAllUsers($_GET['user_type']);
+} else {
+    $users = $userController->viewAllUsers();
+}
 
 echo json_encode($users);

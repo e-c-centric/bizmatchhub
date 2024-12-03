@@ -24,18 +24,31 @@ class ChatModel extends db_connection
         return 0;
     }
 
+    public function getAllConversations(int $userId): array
+    {
+        $userId = intval($userId);
+
+        $sql = "SELECT c.sender_id, c.receiver_id, c.message, c.been_read, c.sent_at as created_at , u.name as sender_username, u.profile_picture
+                FROM Chats c
+                JOIN Users u ON c.sender_id = u.user_id
+                WHERE c.sender_id = $userId OR c.receiver_id = $userId
+                ORDER BY c.sent_at DESC";
+
+        $result = $this->db_fetch_all($sql);
+        return $result ? $result : [];
+    }
+
     public function getChatHistory(int $senderId, int $receiverId): array
     {
         $senderId = intval($senderId);
         $receiverId = intval($receiverId);
 
-        $sql = "SELECT c.sender_id, c.receiver_id, c.message, c.been_read, c.created_at, u.username as sender_username
+        $sql = "SELECT c.sender_id, c.receiver_id, c.message, c.been_read, c.sent_at as created_at, u.name as sender_username, u.profile_picture
                 FROM Chats c
                 JOIN Users u ON c.sender_id = u.user_id
                 WHERE (c.sender_id = $senderId AND c.receiver_id = $receiverId)
                 OR (c.sender_id = $receiverId AND c.receiver_id = $senderId)
-                ORDER BY c.created_at ASC";
-
+                ORDER BY c.sent_at ASC";
 
         $result = $this->db_fetch_all($sql);
         return $result ? $result : [];

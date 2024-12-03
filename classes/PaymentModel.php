@@ -46,12 +46,24 @@ class PaymentModel extends db_connection
         return $result ? $result : [];
     }
 
-    public function getPaymentsByUserId(int $userId): array
+
+    public function getPaymentsByUserId(int $userId, string $userType): array
     {
         $userId = intval($userId);
-        $sql = "SELECT * FROM Payments 
-                WHERE contractor_id = $userId OR freelancer_id = $userId 
-                ORDER BY paid_at DESC";
+        $userType = intval($userType);
+
+        if ($userType === 'contractor') {
+            $sql = "SELECT p.*, u.name as name
+                    FROM payments p
+                    JOIN users u ON p.freelancer_id = u.user_id
+                    WHERE contractor_id = $userId";
+        } else {
+            $sql = "SELECT p.*, u.name as name
+                    FROM payments p
+                    JOIN users u ON p.contractor_id = u.user_id
+                    WHERE freelancer_id = $userId";
+        }
+
         $result = $this->db_fetch_all($sql);
         return $result ? $result : [];
     }

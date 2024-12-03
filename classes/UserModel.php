@@ -81,12 +81,17 @@ class UserModel extends db_connection
         return $this->db_query($sql);
     }
 
-    public function getAllUsers(): array
+    public function getAllUsers($userType = null): array
     {
         if (!$this->db_connect()) {
             return [];
         }
-        $sql = "SELECT user_id, email, phone_number, name, user_type, is_active, created_at FROM Users";
+        $sql = "SELECT user_id, email, phone_number, name, user_type, is_active, created_at, profile_picture FROM Users";
+
+        if ($userType) {
+            $sql .= " WHERE user_type = '$userType'";
+        }
+        
         $result = $this->db_fetch_all($sql);
         return $result ? $result : [];
     }

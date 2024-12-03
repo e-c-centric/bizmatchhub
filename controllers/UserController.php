@@ -68,8 +68,8 @@ class UserController
         return $this->userModel->deactivateUser($userId);
     }
 
-    public function viewAllUsers(): array
+    public function viewAllUsers(string $userType = null): array
     {
-        return $this->userModel->getAllUsers();
+        return $this->userModel->getAllUsers($userType);
     }
 }

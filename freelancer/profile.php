@@ -50,12 +50,6 @@ require_once 'common.php';
             text-align: justify;
         }
 
-        /* Button Styling */
-        .d-flex.justify-content-between .btn {
-            flex: 1;
-            margin: 0 5px;
-        }
-
         /* Responsive Adjustments */
         @media (max-width: 768px) {
 

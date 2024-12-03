@@ -37,7 +37,7 @@ require_once 'common.php';
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 
-    <title>Freelancer Profile</title>
+    <title>Chat</title>
 
     <style>
         /* Freelancer Profile Styles */
@@ -180,22 +180,39 @@ require_once 'common.php';
             background: #555;
         }
 
-        /* Removed Unused Classes */
-        /* .profile-details h3 {
-    // Removed: .profile-details h3 is not used
-} */
+        .conversation-item.active {
+            background-color: #e9ecef;
+        }
 
-        /* .profile-actions .btn {
-    // Removed: .profile-actions .btn is not used
-} */
+        /* Message Bubbles */
+        .message-received {
+            background-color: #e9ecef;
+            align-self: flex-start;
+        }
 
-        /* .badge-danger {
-    // Removed: .badge-danger is not used
-} */
+        .message-sent {
+            background-color: #0d6efd;
+            color: #fff;
+            align-self: flex-end;
+        }
 
-        /* .profile-image {
-    // Removed: .profile-image is not used
-} */
+        /* Scrollbar Styling */
+        .overflow-auto::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .overflow-auto::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .overflow-auto::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .overflow-auto::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
     </style>
 </head>
 
@@ -292,58 +309,30 @@ require_once 'common.php';
                         <h5>Chats</h5>
                     </div>
                     <div class="flex-grow-1 overflow-auto" id="conversationsList">
-                        <!-- Example Conversation Item -->
-                        <div class="d-flex align-items-center p-3 conversation-item border-bottom" data-user-id="1">
-                            <img src="../assets/svg/profile.png" alt="User" class="rounded-circle me-3" width="50" height="50">
-                            <div>
-                                <h6 class="mb-0">John Doe</h6>
-                                <small class="text-muted">Hey, how are you?</small>
-                            </div>
-                        </div>
-                        <!-- Repeat Conversation Items as Needed -->
+                        <!-- Conversations will be loaded here dynamically -->
                     </div>
                 </div>
 
                 <!-- Messages Panel -->
                 <div class="col-md-8 d-flex flex-column p-0">
                     <!-- Conversation Header -->
-                    <div class="p-3 border-bottom d-flex align-items-center">
-                        <img src="../assets/svg/profile.png" alt="User" class="rounded-circle me-3" width="50" height="50">
-                        <h5 class="mb-0">John Doe</h5>
+                    <div class="p-3 border-bottom d-flex align-items-center" id="conversationHeader">
+                        <img src="https://via.placeholder.com/50" alt="User" class="rounded-circle me-3" width="50" height="50">
+                        <h5 class="mb-0">Select a Conversation</h5>
                     </div>
 
                     <!-- Chat History -->
                     <div class="flex-grow-1 overflow-auto p-3" id="chatHistory">
-                        <!-- Example Message -->
-                        <div class="d-flex mb-3">
-                            <div class="me-3">
-                                <img src="../assets/svg/profile.png" alt="User" class="rounded-circle" width="40" height="40">
-                            </div>
-                            <div>
-                                <div class="bg-light p-2 rounded">
-                                    Hello! How are you?
-                                </div>
-                                <small class="text-muted">10:00 AM</small>
-                            </div>
-                        </div>
-                        <!-- Example Received Message -->
-                        <div class="d-flex justify-content-end mb-3">
-                            <div>
-                                <div class="bg-primary text-white p-2 rounded">
-                                    I'm good, thanks! How about you?
-                                </div>
-                                <small class="text-muted">10:05 AM</small>
-                            </div>
-                            <div class="ms-3">
-                                <img src="../assets/svg/profile.png" alt="User" class="rounded-circle" width="40" height="40">
-                            </div>
-                        </div>
-                        <!-- Repeat Messages as Needed -->
+                        <!-- Messages will be loaded here dynamically -->
                     </div>
 
                     <!-- Message Input -->
                     <div class="p-3 border-top">
                         <form id="messageForm" class="d-flex">
+                            <button type="button" class="btn btn-primary rounded-circle me-2" title = "Issue invoice" onclick="window.location.href='earnings.php'">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                            <input type="hidden" id="receiverId" value="">
                             <input type="text" class="form-control me-2" id="messageInput" placeholder="Type a message" required>
                             <button type="submit" class="btn btn-primary">Send</button>
                         </form>
@@ -352,10 +341,8 @@ require_once 'common.php';
             </div>
         </div>
     </main>
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
-        crossorigin="anonymous"></script>
+
+
     <script>
         $(document).ready(function() {
 
@@ -410,105 +397,189 @@ require_once 'common.php';
             fetchNotificationStatus();
             setInterval(fetchNotificationStatus, 60000);
 
-            $('.conversation-item').click(function() {
-                // Remove active class from all conversations
-                $('.conversation-item').removeClass('active');
-                // Add active class to the clicked conversation
-                $(this).addClass('active');
+            $(document).ready(function() {
+                const fallbackImage = 'https://via.placeholder.com/50';
 
-                // Fetch User ID from data attribute
-                var userId = $(this).data('user-id');
+                loadConversations();
 
-                // TODO: Implement AJAX call to fetch messages for the selected conversation
-                // For now, we'll simulate with static content
+                function loadConversations() {
+                    $.ajax({
+                        url: '../actions/get_all_conversations_action.php',
+                        type: 'POST',
+                        dataType: 'json',
+                        success: function(data) {
+                            console.log('Conversations Data:', data);
+                            console.log('Type of data:', typeof data);
+                            console.log('Is Array:', Array.isArray(data));
 
-                // Update Conversation Header
-                var userName = $(this).find('h6').text();
-                $('h5.mb-0').text(userName);
-                var userImage = $(this).find('img').attr('src');
-                $('div.p-3.border-bottom img').attr('src', userImage);
+                            // Validate that data is an array
+                            if (!Array.isArray(data)) {
+                                console.error('Unexpected response format:', data);
+                                $('#conversationsList').empty().append('<p class="p-3 text-danger">Failed to load conversations.</p>');
+                                return;
+                            }
 
-                // Clear Chat History
-                $('#chatHistory').empty();
+                            $('#conversationsList').empty();
+                            if (data.length === 0) {
+                                $('#conversationsList').append('<p class="p-3">No conversations found.</p>');
+                                return;
+                            }
 
-                // TODO: Populate #chatHistory with fetched messages
+                            data.forEach(function(conv) {
+                                const profilePic = conv.profile_picture ? conv.profile_picture : fallbackImage;
+                                const conversationItem = `
+                                    <div class="d-flex align-items-center p-3 conversation-item border-bottom" data-user-id="${escapeHtml(conv.sender_id)}">
+                                        <img src="${escapeHtml(profilePic)}" alt="User" class="rounded-circle me-3" width="50" height="50" onerror="this.src='${fallbackImage}'">
+                                        <div>
+                                            <h6 class="mb-0">${escapeHtml(conv.sender_username)}</h6>
+                                            <small class="text-muted">Last message...</small>
+                                        </div>
+                                    </div>
+                                `;
+                                $('#conversationsList').append(conversationItem);
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Failed to load conversations:', error);
+                        }
+                    });
+                }
 
-                // Example Messages (Replace with dynamic content)
-                var messages = [{
-                        sender: 'other',
-                        text: 'Hello! How are you?',
-                        time: '10:00 AM'
-                    },
-                    {
-                        sender: 'self',
-                        text: "I'm good, thanks! How about you?",
-                        time: '10:05 AM'
-                    }
-                ];
 
-                messages.forEach(function(msg) {
-                    if (msg.sender === 'other') {
-                        $('#chatHistory').append(`
-                        <div class="d-flex mb-3">
-                            <div class="me-3">
-                                <img src="${userImage}" alt="User" class="rounded-circle" width="40" height="40">
-                            </div>
-                            <div>
-                                <div class="bg-light p-2 rounded">
-                                    ${msg.text}
-                                </div>
-                                <small class="text-muted">${msg.time}</small>
-                            </div>
-                        </div>
-                    `);
-                    } else {
-                        $('#chatHistory').append(`
-                        <div class="d-flex justify-content-end mb-3">
-                            <div>
-                                <div class="bg-primary text-white p-2 rounded">
-                                    ${msg.text}
-                                </div>
-                                <small class="text-muted">${msg.time}</small>
-                            </div>
-                            <div class="ms-3">
-                                <img src="../assets/svg/profile.png" alt="User" class="rounded-circle" width="40" height="40">
-                            </div>
-                        </div>
-                    `);
-                    }
+
+                // Handle Conversation Click
+                $(document).on('click', '.conversation-item', function() {
+                    $('.conversation-item').removeClass('active');
+                    $(this).addClass('active');
+
+                    const receiverId = $(this).data('user-id');
+                    $('#receiverId').val(receiverId);
+
+                    loadMessages(receiverId);
+
+                    const userName = $(this).find('h6').text();
+                    const userImage = $(this).find('img').attr('src') || fallbackImage;
+                    $('#conversationHeader img').attr('src', userImage).on('error', function() {
+                        $(this).attr('src', fallbackImage);
+                    });
+                    $('#conversationHeader h5').text(userName);
                 });
 
-                // Scroll to Bottom
-                $('#chatHistory').scrollTop($('#chatHistory')[0].scrollHeight);
+                // Function to load messages for a conversation
+                function loadMessages(receiverId) {
+                    $.ajax({
+                        url: '../actions/get_messages_by_recipient_action.php',
+                        type: 'POST',
+                        data: {
+                            receiver_id: receiverId
+                        },
+                        dataType: 'json',
+                        success: function(messages) {
+                            $('#chatHistory').empty();
+                            if (messages.length === 0) {
+                                $('#chatHistory').append('<p>No messages yet.</p>');
+                                return;
+                            }
+                            messages.forEach(function(msg) {
+                                const profilePic = msg.profile_picture ? msg.profile_picture : fallbackImage;
+                                const messageTime = new Date(msg.created_at).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                if (msg.sender_id == <?php echo isset($_SESSION['user_id']) ? $_SESSION['user_id'] : '0'; ?>) {
+                                    // Sent Message
+                                    $('#chatHistory').append(`
+                                <div class="d-flex flex-column align-items-end mb-3">
+                                    <div class="bg-primary text-white p-2 rounded message-sent">
+                                        ${msg.message}
+                                    </div>
+                                    <small class="text-muted">${messageTime}</small>
+                                </div>
+                            `);
+                                } else {
+                                    // Received Message
+                                    $('#chatHistory').append(`
+                                <div class="d-flex mb-3">
+                                    <img src="${profilePic}" alt="User" class="rounded-circle me-3" width="40" height="40" onerror="this.src='${fallbackImage}'">
+                                    <div class="d-flex flex-column">
+                                        <div class="bg-light p-2 rounded message-received">
+                                            ${msg.message}
+                                        </div>
+                                        <small class="text-muted">${messageTime}</small>
+                                    </div>
+                                </div>
+                            `);
+                                }
+                            });
+                            // Scroll to Bottom
+                            $('#chatHistory').scrollTop($('#chatHistory')[0].scrollHeight);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Failed to load messages:', error);
+                        }
+                    });
+                }
+
+                // Handle Message Form Submission
+                $('#messageForm').submit(function(e) {
+                    e.preventDefault();
+                    const receiverId = $('#receiverId').val();
+                    const message = $('#messageInput').val().trim();
+                    if (message === '' || receiverId === '') {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: '../actions/send_message_action.php',
+                        type: 'POST',
+                        data: {
+                            receiver_id: receiverId,
+                            message: message
+                        },
+                        dataType: 'json',
+                        success: function(response) {
+                            if (response.message_id > 0) {
+                                // Message sent successfully
+                                $('#chatHistory').append(`
+                            <div class="d-flex flex-column align-items-end mb-3">
+                                <div class="bg-primary text-white p-2 rounded message-sent">
+                                    ${message}
+                                </div>
+                                <small class="text-muted">Now</small>
+                            </div>
+                        `);
+                                $('#messageInput').val('');
+                                $('#chatHistory').scrollTop($('#chatHistory')[0].scrollHeight);
+                            } else {
+                                Swal.fire('Error', 'Failed to send message.', 'error');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Failed to send message:', error);
+                        }
+                    });
+                });
+
+                // Optional: Periodically refresh conversations and messages
+                setInterval(function() {
+                    const activeReceiverId = $('#receiverId').val();
+                    if (activeReceiverId) {
+                        loadMessages(activeReceiverId);
+                        loadConversations();
+                    } else {
+                        loadConversations();
+                    }
+                }, 60000); // Refresh every 60 seconds
             });
 
-            // Handle Message Form Submission
-            $('#messageForm').submit(function(e) {
-                e.preventDefault();
-                var message = $('#messageInput').val().trim();
-                if (message === '') return;
-
-                // TODO: Implement AJAX call to send the message
-
-                // Append Sent Message
-                $('#chatHistory').append(`
-                <div class="d-flex justify-content-end mb-3">
-                    <div>
-                        <div class="bg-primary text-white p-2 rounded">
-                            ${message}
-                        </div>
-                        <small class="text-muted">Now</small>
-                    </div>
-                    <div class="ms-3">
-                        <img src="../assets/svg/profile.png" alt="User" class="rounded-circle" width="40" height="40">
-                    </div>
-                </div>
-            `);
-
-                $('#messageInput').val('');
-
-                $('#chatHistory').scrollTop($('#chatHistory')[0].scrollHeight);
-            });
+            function escapeHtml(text) {
+                return text
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
         });
     </script>
 </body>

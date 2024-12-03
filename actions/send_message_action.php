@@ -7,10 +7,29 @@ header('Content-Type: application/json');
 require_once '../controllers/ChatController.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: ../login/login.php');
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit();
 }
 
-$notificationController = new ChatController();
+if (!isset($_POST['receiver_id']) || !isset($_POST['message'])){
+    echo json_encode(['success' => false, 'message' => 'Missing required fields.']);
+    exit();
+}
 
-$notifications = $notificationController->getUnreadMessagesCount($_SESSION['user_id']);
+$receiver_id = intval($_POST['receiver_id']);
+$message = trim($_POST['message']) ?? '';
+
+// if($message === ''){
+//     echo json_encode(['success' => false, 'message' => 'Message cannot be empty.']);
+//     exit();
+// }
+
+$chatController = new ChatController();
+
+$messageId = $chatController->sendMessage($_SESSION['user_id'], $receiver_id, $message);
+
+if($messageId){
+    echo json_encode(['success' => true, 'message_id' => $messageId]);
+} else {
+    echo json_encode(['success' => false, 'message' => 'Failed to send message.']);
+}

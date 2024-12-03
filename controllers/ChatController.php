@@ -34,4 +34,9 @@ class ChatController
     {
         return $this->chatModel->getUnreadMessagesCount($receiverId);
     }
+
+    public function getAllConversations(int $userId): array
+    {
+        return $this->chatModel->getAllConversations($userId);
+    }
 }

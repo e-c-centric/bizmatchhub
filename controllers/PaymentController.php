@@ -20,9 +20,9 @@ class PaymentController
         return $this->paymentModel->getPaymentByInvoiceNumber($invoiceNumber);
     }
 
-    public function viewPaymentHistory(int $userId): array
+    public function viewPaymentHistory(int $userId, string $userType): array
     {
-        return $this->paymentModel->getPaymentsByUserId($userId);
+        return $this->paymentModel->getPaymentsByUserId($userId, $userType);
     }
 
     public function updatePaymentStatus(string $invoiceNumber, string $status): bool
